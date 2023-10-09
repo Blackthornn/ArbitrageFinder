@@ -46,7 +46,7 @@ def get_sports(key: str) -> set[str]:
     return {item["key"] for item in response.json()}
 
 
-def get_data(key: str, sport: str, region: str = "eu"):
+def get_data(key: str, sport: str, region: str = "eu", bookmakers: list = None):def get_data(key: str, sport: str, region: str = "eu"):
     url = f"{BASE_URL}/sports/{sport}/odds/"
     escaped_url = PROTOCOL + requests.utils.quote(url)
     querystring = {
@@ -61,6 +61,10 @@ def get_data(key: str, sport: str, region: str = "eu"):
         handle_faulty_response(response)
 
     return response.json()
+    data = response.json()
+        if bookmakers:
+            data = [match for match in data if any(bookmaker['name'] in bookmakers for bookmaker in match['bookmakers'])]
+        return data
 
 
 def process_data(matches: Iterable, include_started_matches: bool = True) -> Generator[dict, None, None]:
@@ -96,11 +100,15 @@ def process_data(matches: Iterable, include_started_matches: bool = True) -> Gen
         }
 
 
-def get_arbitrage_opportunities(key: str, region: str, cutoff: float):
+def get_arbitrage_opportunities(key: str, region: str, cutoff: float, bookmakers: list = None):def get_arbitrage_opportunities(key: str, region: str, cutoff: float):
     sports = get_sports(key)
     data = chain.from_iterable(get_data(key, sport, region=region) for sport in sports)
     data = filter(lambda x: x != "message", data)
     results = process_data(data)
     arbitrage_opportunities = filter(lambda x: 0 < x["total_implied_odds"] < 1-cutoff, results)
 
+    data = get_data(key, sport, region, bookmakers)
+        processed_data = process_data(data)
+        arbitrage_opportunities = [match for match in processed_data if match['arbitrage'] > cutoff]
+        return arbitrage_opportunities
     return arbitrage_opportunities

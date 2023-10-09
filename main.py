@@ -5,8 +5,12 @@ bookmakers to each other in order to determine whether there are profitable and 
 from src.logic import get_arbitrage_opportunities
 import os
 import argparse
+import os
+import argparse
 from dotenv import load_dotenv
 from rich import print
+
+from src.logic import get_arbitrage_opportunities
 
 
 def main():
@@ -15,6 +19,11 @@ def main():
     parser = argparse.ArgumentParser(
         prog="Arbitrage Finder",
         description=__doc__
+    )
+    parser.add_argument(
+        "-b", "--bookmakers",
+        nargs='+',
+        help="Names of bookmakers to consider. Must specify at least two bookmakers if this argument is used."
     )
     parser.add_argument(
         "-k", "--key",
@@ -42,7 +51,8 @@ def main():
 
     cutoff = args.cutoff/100
 
-    arbitrage_opportunities = get_arbitrage_opportunities(key=args.key, region=args.region, cutoff=cutoff)
+    bookmakers = args.bookmakers if args.bookmakers and len(args.bookmakers) >= 2 else None
+    arbitrage_opportunities = get_arbitrage_opportunities(key=args.key, region=args.region, cutoff=cutoff, bookmakers=bookmakers)
 
     if args.unformatted:
         print(list(arbitrage_opportunities))
@@ -55,6 +65,10 @@ def main():
             print(f"\t\tTotal implied odds: {arb['total_implied_odds']} with these odds:")
             for key, value in arb['best_outcome_odds'].items():
                 print(f"\t\t[bold red]{key}[/bold red] with [green]{value[0]}[/green] for {value[1]}")
+
+
+if __name__ == '__main__':
+    main()
 
 
 if __name__ == '__main__':
